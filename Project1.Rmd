@@ -1,0 +1,158 @@
+---
+title: "Project1"
+author: "Brennan Chan"
+date: "2023-10-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Problem to solve: 
+Does the number of hours contribute to the amount of electricity the car is charged by? What is the relationship between the number of hours used to charge the vehicle and the amount of electricity that is transferred to the vehicle?
+```{r echo = TRUE}
+library(magrittr)
+library(leaflet)
+library(plotly)
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(ggpubr)
+library(caTools)
+theme_set(theme_pubr())
+getwd()
+charging_station = read.csv('station_data_dataverse.csv')
+attach(charging_station)
+```
+The resource I used is Kaggle, and the data sheet is named "Electric Vehicle Charging Dataset". The dataset “contains sessions from 85 EV drivers with repeat usage at 105 stations across 25 sites at a workplace charging program”; it indicates the date and length of each session, total energy used, cost, and more, and these columns will serve as the potential variables. However, I will omit some of the variables to be tested, as they are irrelevant to the study overall.
+```{r, echo=FALSE,message=FALSE}
+charging_session_Mon = subset(charging_station, Mon == 1)
+charging_session_Tues = subset(charging_station, Tues == 1)
+charging_session_Wed = subset(charging_station, Wed == 1)
+charging_session_Thurs = subset(charging_station, Thurs == 1)
+charging_session_Fri = subset(charging_station, Fri == 1)
+charging_session_Sat = subset(charging_station, Sat == 1)
+charging_session_Sun = subset(charging_station, Sun == 1)
+print(sum(charging_station$Mon))
+print(sum(charging_station$Tues))
+print(sum(charging_station$Wed))
+print(sum(charging_station$Thurs))
+print(sum(charging_station$Fri))
+print(sum(charging_station$Sat))
+print(sum(charging_station$Sun))
+charge_by_day <- charging_station[order(as.character(charging_station$weekday)),]
+```
+My first test was to if there was a monetary driving force behind the amount of charge given.
+```{r, echo=FALSE,message=FALSE}
+yax <- list(
+  title = "kwhTotal",
+  titlefont = list(family="Modern Computer Roman")
+)
+xax <- list(
+  title = "dollars",
+  titlefont = list(family="Modern Computer Roman")
+)
+plot_ly(charging_station, x=dollars, y=kwhTotal, type = "scatter", mode="markers", color="red") %>%
+  layout(xaxis=xax, yaxis=yax)
+```
+However, given the rather random distribution and its tendency to go between 5 and 10 as the amount rises, this can be ruled out. So instead, I decided to see if there was a correlation between the day of the week and the amount of electricity fed to the individual cars.
+```{r}
+weekdayCount <- charging_station %>%
+  select(Mon, Tues, Wed, Thurs, Fri, Sat, Sun) %>%
+  colSums()
+barplot(weekdayCount,
+        main = "Weekdays of dataset",
+        xlab = "Day of the Week",
+        ylab = "Charging sessions",
+        col = "yellow")
+```
+```{r}
+charging_session_Mon = subset(charging_station, Mon == 1)
+charging_session_Tues = subset(charging_station, Tues == 1)
+charging_session_Wed = subset(charging_station, Wed == 1)
+charging_session_Thurs = subset(charging_station, Thurs == 1)
+charging_session_Fri = subset(charging_station, Fri == 1)
+charging_session_Sat = subset(charging_station, Sat == 1)
+charging_session_Sun = subset(charging_station, Sun == 1)
+weekdayCount <- charging_station %>%
+  select(Mon, Tues, Wed, Thurs, Fri, Sat, Sun) %>%
+  colSums()
+```
+
+```{r}
+MonkwhCount <- charging_session_Mon %>%
+  select(kwhTotal) %>%
+  colSums()
+MonCount <- charging_station %>%
+  select(Mon) %>%
+  colSums()
+MonAvg <- MonkwhCount/MonCount
+MonAvg
+```
+```{r}
+TueskwhCount <- charging_session_Tues %>%
+  select(kwhTotal) %>%
+  colSums()
+TuesCount <- charging_station %>%
+  select(Tues) %>%
+  colSums()
+TuesAvg <- TueskwhCount/TuesCount
+TuesAvg
+```
+```{r}
+WedkwhCount <- charging_session_Wed %>%
+  select(kwhTotal) %>%
+  colSums()
+WedCount <- charging_station %>%
+  select(Wed) %>%
+  colSums()
+WedAvg <- WedkwhCount/WedCount
+WedAvg
+```
+```{r}
+ThurskwhCount <- charging_session_Thurs %>%
+  select(kwhTotal) %>%
+  colSums()
+ThursCount <- charging_station %>%
+  select(Thurs) %>%
+  colSums()
+ThursAvg <- ThurskwhCount/ThursCount
+ThursAvg
+```
+```{r}
+FrikwhCount <- charging_session_Fri %>%
+  select(kwhTotal) %>%
+  colSums()
+FriCount <- charging_station %>%
+  select(Fri) %>%
+  colSums()
+FriAvg <- FrikwhCount/FriCount
+FriAvg
+```
+```{r}
+SatkwhCount <- charging_session_Sat %>%
+  select(kwhTotal) %>%
+  colSums()
+SatCount <- charging_station %>%
+  select(Sat) %>%
+  colSums()
+SatAvg <- SatkwhCount/SatCount
+SatAvg
+```
+```{r}
+SunkwhCount <- charging_session_Sun %>%
+  select(kwhTotal) %>%
+  colSums()
+SunCount <- charging_station %>%
+  select(Sun) %>%
+  colSums()
+SunAvg <- SunkwhCount/SunCount
+SunAvg
+```
+```{r}
+weekdayList <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+kwhByWeekday <- c(MonAvg, TuesAvg, WedAvg, ThursAvg, FriAvg, SatAvg, SunAvg)
+kwhByDay <- do.call(rbind, Map(data.frame, Day_Of_Week=weekdayList, Average_Charge=kwhByWeekday))
+kwhByDay
+```
+In conclusion, it turns out that on average, Sunday is the best time to go charge one's car, as the amount of charge is maximized. However, I suspected that there was actually an inverse relationship between the number of cars charging at the same time and the kwhTotal variable. Given that the number of people charging on the weekends was drastically reduced by several times, I suspect that this allowed more charge to be distributed among each car that was still charging on the weekend. For now, though, this is just speculation.
